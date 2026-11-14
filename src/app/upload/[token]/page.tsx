@@ -79,7 +79,7 @@ function UploadContent() {
 
             setResults(processedResults);
         } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : "Si è verificato un errore durante l'invio.";
+            const message = err instanceof Error ? err.message : "Si \u00e8 verificato un errore durante l'invio.";
             setError(message);
         } finally {
             setUploading(false);
@@ -105,7 +105,7 @@ function UploadContent() {
                                 Aggiungi i tuoi documenti
                             </label>
 
-                            {/* Boutons distincts pour Caméra et Galerie pour un contrôle total sur mobile */}
+                            {/* Boutons distincts pour Camera et Galerie pour un controle total sur mobile */}
                             <div className="grid grid-cols-2 gap-3 mb-4">
                                 <label className="cursor-pointer flex flex-col items-center justify-center p-4 border-2 border-blue-500 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors text-blue-700 shadow-sm">
                                     <Camera className="w-6 h-6 mb-1" />
@@ -182,7 +182,7 @@ function UploadContent() {
                             {uploading ? (
                                 <>
                                     <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
-                                    Elaborazione & IA in corso...
+                                    Elaborazione &amp; IA in corso...
                                 </>
                             ) : (
                                 'Invia allo studio'
@@ -228,7 +228,7 @@ function UploadContent() {
 export default function ClientUploadPage() {
     return (
         <main className="min-h-screen bg-slate-100 text-slate-900 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
-            <Suspense fallback={<div className="text-center text-slate-500">Caricamento dell area sicura...</div>}>
+            <Suspense fallback={<div className="text-center text-slate-500">{"Caricamento dell'area sicura..."}</div>}>
                 <UploadContent />
             </Suspense>
         </main>
