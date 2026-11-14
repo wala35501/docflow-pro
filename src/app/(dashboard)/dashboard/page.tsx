@@ -33,7 +33,6 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Etats pour la modale "Nouveau Client"
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [clientName, setClientName] = useState('');
     const [clientEmail, setClientEmail] = useState('');
@@ -48,14 +47,14 @@ export default function DashboardPage() {
                 const data = await res.json();
 
                 if (!res.ok) {
-                    throw new Error(data.error || 'Erreur de chargement');
+                    throw new Error(data.error || 'Errore di caricamento');
                 }
 
                 const formattedDocs = data.documents.map((item: RawDocumentItem) => ({
                     id: item.id,
-                    clientName: item.clients?.name || item.extracted_client_name || 'Client Inconnu',
+                    clientName: item.clients?.name || item.extracted_client_name || 'Cliente Sconosciuto',
                     documentType: item.document_type,
-                    documentDate: item.document_date || 'N/A',
+                    documentDate: item.document_date || 'N/D',
                     fileName: item.suggested_file_name,
                     summary: item.summary,
                     createdAt: item.created_at,
@@ -63,7 +62,7 @@ export default function DashboardPage() {
 
                 setDocuments(formattedDocs);
             } catch (err: unknown) {
-                const msg = err instanceof Error ? err.message : 'Impossible de charger les documents';
+                const msg = err instanceof Error ? err.message : 'Impossibile caricare i documenti';
                 setError(msg);
             } finally {
                 setLoading(false);
@@ -86,12 +85,12 @@ export default function DashboardPage() {
             });
 
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Erreur lors de la creation');
+            if (!res.ok) throw new Error(data.error || 'Errore durante la creazione');
 
             const link = `${window.location.origin}/upload/${data.client.upload_token}`;
             setGeneratedLink(link);
         } catch (err: unknown) {
-            alert(err instanceof Error ? err.message : 'Erreur');
+            alert(err instanceof Error ? err.message : 'Errore');
         } finally {
             setSubmittingClient(false);
         }
@@ -118,10 +117,10 @@ export default function DashboardPage() {
                     <div>
                         <div className="flex items-center space-x-2 text-blue-600 font-semibold text-sm">
                             <Building2 className="w-5 h-5" />
-                            <span>Cabinet Comptable / Juridique - Espace Gestion</span>
+                            <span>Studio Commerciale / Legale - Area Gestione</span>
                         </div>
                         <h1 className="text-2xl font-extrabold text-slate-900 mt-1">
-                            Tableau de bord des documents recus
+                            Cruscotto dei documenti ricevuti
                         </h1>
                     </div>
 
@@ -131,7 +130,7 @@ export default function DashboardPage() {
                             className="inline-flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-colors"
                         >
                             <UserPlus className="w-4 h-4" />
-                            <span>Nouveau client & Lien d envoi</span>
+                            <span>Nuovo cliente &amp; Link di invio</span>
                         </button>
                     </div>
                 </div>
@@ -141,7 +140,7 @@ export default function DashboardPage() {
                         <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
                         <input
                             type="text"
-                            placeholder="Rechercher par client, type de document ou nom de fichier..."
+                            placeholder="Cerca per cliente, tipo di documento o nome file..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-slate-900"
@@ -160,12 +159,12 @@ export default function DashboardPage() {
                         <table className="w-full text-left border-collapse text-sm">
                             <thead>
                                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
-                                    <th className="py-3 px-4">Client / Emetteur</th>
-                                    <th className="py-3 px-4">Type</th>
-                                    <th className="py-3 px-4">Nom normalise (PDF)</th>
-                                    <th className="py-3 px-4">Date du doc</th>
-                                    <th className="py-3 px-4">Resume</th>
-                                    <th className="py-3 px-4 text-right">Actions</th>
+                                    <th className="py-3 px-4">Cliente / Mittente</th>
+                                    <th className="py-3 px-4">Tipo</th>
+                                    <th className="py-3 px-4">Nome normalizzato (PDF)</th>
+                                    <th className="py-3 px-4">Data documento</th>
+                                    <th className="py-3 px-4">Riepilogo</th>
+                                    <th className="py-3 px-4 text-right">Azioni</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-200">
@@ -174,7 +173,7 @@ export default function DashboardPage() {
                                         <td colSpan={6} className="text-center py-12 text-slate-500">
                                             <div className="flex justify-center items-center space-x-2">
                                                 <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
-                                                <span>Chargement des donnees Supabase...</span>
+                                                <span>Caricamento dati da Supabase...</span>
                                             </div>
                                         </td>
                                     </tr>
@@ -197,7 +196,7 @@ export default function DashboardPage() {
                                             <td className="py-3 px-4 text-slate-600 truncate max-w-xs">{doc.summary}</td>
                                             <td className="py-3 px-4 text-right">
                                                 <button
-                                                    onClick={() => alert(`Telechargement du fichier : ${doc.fileName}`)}
+                                                    onClick={() => alert(`Download del file : ${doc.fileName}`)}
                                                     className="inline-flex items-center space-x-1 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 transition-colors"
                                                 >
                                                     <Download className="w-3.5 h-3.5" />
@@ -209,7 +208,7 @@ export default function DashboardPage() {
                                 ) : (
                                     <tr>
                                         <td colSpan={6} className="text-center py-12 text-slate-500">
-                                            Aucun document trouve dans le coffre-fort. Creez un client pour obtenir son lien d upload !
+                                            {"Nessun documento trovato nell'archivio. Crea un cliente per ottenere il suo link di caricamento!"}
                                         </td>
                                     </tr>
                                 )}
@@ -231,20 +230,22 @@ export default function DashboardPage() {
                         </button>
 
                         <div>
-                            <h3 className="text-lg font-bold text-slate-900">Ajouter un nouveau client</h3>
+                            <h3 className="text-lg font-bold text-slate-900">Aggiungi un nuovo cliente</h3>
                             <p className="text-xs text-slate-500 mt-1">
-                                Generez un lien d upload securise unique que votre client pourra utiliser pour transmettre ses factures.
+                                {"Genera un link di caricamento sicuro e unico che il tuo cliente potr\u00e0 utilizzare per trasmettere i documenti."}
                             </p>
                         </div>
 
                         {!generatedLink ? (
                             <form onSubmit={handleCreateClient} className="space-y-4">
                                 <div>
-                                    <label className="block text-xs font-semibold text-slate-700 mb-1">Nom de l entreprise ou du client *</label>
+                                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                                        {"Nome dell'azienda o del cliente *"}
+                                    </label>
                                     <input
                                         type="text"
                                         required
-                                        placeholder="Ex: Studio Rossi S.R.L."
+                                        placeholder="Es: Studio Rossi S.R.L."
                                         value={clientName}
                                         onChange={(e) => setClientName(e.target.value)}
                                         className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-slate-900"
@@ -252,10 +253,10 @@ export default function DashboardPage() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-semibold text-slate-700 mb-1">Email du client (optionnel)</label>
+                                    <label className="block text-xs font-semibold text-slate-700 mb-1">Email del cliente (opzionale)</label>
                                     <input
                                         type="email"
-                                        placeholder="client@example.it"
+                                        placeholder="cliente@example.it"
                                         value={clientEmail}
                                         onChange={(e) => setClientEmail(e.target.value)}
                                         className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-slate-900"
@@ -267,7 +268,7 @@ export default function DashboardPage() {
                                     disabled={submittingClient}
                                     className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium shadow-sm transition-colors flex justify-center items-center"
                                 >
-                                    {submittingClient ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : 'Generer le lien unique'}
+                                    {submittingClient ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : 'Genera link unico'}
                                 </button>
                             </form>
                         ) : (
@@ -275,9 +276,9 @@ export default function DashboardPage() {
                                 <div className="bg-green-50 border border-green-200 p-3 rounded-lg text-xs text-green-800 space-y-1">
                                     <p className="font-bold flex items-center">
                                         <CheckCircle2 className="w-4 h-4 mr-1 text-green-600" />
-                                        Client cree avec succes !
+                                        Cliente creato con successo!
                                     </p>
-                                    <p className="truncate"><strong>Lien pour {clientName} :</strong></p>
+                                    <p className="truncate"><strong>Link per {clientName} :</strong></p>
                                 </div>
 
                                 <div className="flex items-center space-x-2">
@@ -292,7 +293,7 @@ export default function DashboardPage() {
                                         className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium flex items-center space-x-1 shrink-0 transition-colors"
                                     >
                                         {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                                        <span>{copied ? 'Copie !' : 'Copier'}</span>
+                                        <span>{copied ? 'Copiato !' : 'Copia'}</span>
                                     </button>
                                 </div>
 
@@ -305,14 +306,14 @@ export default function DashboardPage() {
                                     className="w-full py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-sm font-medium transition-colors flex justify-center items-center space-x-1.5"
                                 >
                                     <UserPlus className="w-4 h-4" />
-                                    <span>Ajouter un autre client en continu</span>
+                                    <span>Aggiungi un altro cliente in sequenza</span>
                                 </button>
 
                                 <button
                                     onClick={() => setIsModalOpen(false)}
                                     className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors"
                                 >
-                                    Terminer et fermer
+                                    Termina e chiudi
                                 </button>
                             </div>
                         )}

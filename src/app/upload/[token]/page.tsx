@@ -2,7 +2,7 @@
 
 import { useState, Suspense } from 'react';
 import { useParams } from 'next/navigation';
-import { Upload, CheckCircle2, Loader2, FileText, X } from 'lucide-react';
+import { Upload, CheckCircle2, Loader2, FileText, X, Camera, Image as ImageIcon } from 'lucide-react';
 import type { DocumentMetadata } from '@/core/ai-classifier';
 
 interface ProcessedResult {
@@ -101,31 +101,39 @@ function UploadContent() {
                 {results.length === 0 ? (
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                Scatta una foto o seleziona i tuoi documenti
+                            <label className="block text-sm font-semibold text-slate-700 mb-2 text-center">
+                                Aggiungi i tuoi documenti
                             </label>
-                            <div className="flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-lg hover:border-blue-500 transition-colors bg-slate-50">
-                                <div className="space-y-2 text-center">
-                                    <Upload className="mx-auto h-12 w-12 text-blue-500" />
-                                    <div className="flex text-sm text-slate-600 justify-center">
-                                        <label
-                                            htmlFor="file-upload"
-                                            className="relative cursor-pointer bg-white py-1 px-3 border border-slate-300 rounded-md font-medium text-blue-600 hover:bg-slate-50 focus-within:outline-none shadow-sm"
-                                        >
-                                            <span>Sfoglia (multipli)</span>
-                                            <input
-                                                id="file-upload"
-                                                name="file-upload"
-                                                type="file"
-                                                accept="image/*"
-                                                multiple
-                                                className="sr-only"
-                                                onChange={handleFileChange}
-                                            />
-                                        </label>
-                                    </div>
-                                    <p className="text-xs text-slate-500">Fatture, ricevute, documenti (PNG, JPG)</p>
-                                </div>
+
+                            {/* Boutons distincts pour Caméra et Galerie pour un contrôle total sur mobile */}
+                            <div className="grid grid-cols-2 gap-3 mb-4">
+                                <label className="cursor-pointer flex flex-col items-center justify-center p-4 border-2 border-blue-500 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors text-blue-700 shadow-sm">
+                                    <Camera className="w-6 h-6 mb-1" />
+                                    <span className="text-xs font-bold">Scatta foto</span>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        capture="environment"
+                                        className="sr-only"
+                                        onChange={handleFileChange}
+                                    />
+                                </label>
+
+                                <label className="cursor-pointer flex flex-col items-center justify-center p-4 border-2 border-slate-300 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors text-slate-700 shadow-sm">
+                                    <ImageIcon className="w-6 h-6 mb-1" />
+                                    <span className="text-xs font-bold">Galleria / File</span>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        className="sr-only"
+                                        onChange={handleFileChange}
+                                    />
+                                </label>
+                            </div>
+
+                            <div className="flex justify-center px-4 pt-3 pb-4 border border-slate-200 border-dashed rounded-lg bg-slate-50/50 text-center">
+                                <p className="text-xs text-slate-500">Fatture, ricevute, documenti (PNG, JPG)</p>
                             </div>
                         </div>
 
