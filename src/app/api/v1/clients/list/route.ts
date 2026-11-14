@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 
-export const dynamic = 'force-dynamic';
+
 
 const RETENTION_DAYS = 30;
 
