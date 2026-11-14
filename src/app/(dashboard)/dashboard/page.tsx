@@ -306,7 +306,7 @@ export default function DashboardPage() {
                                     className="w-full py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-sm font-medium transition-colors flex justify-center items-center space-x-1.5"
                                 >
                                     <UserPlus className="w-4 h-4" />
-                                    <span>Aggiungi un altro cliente in sequenza</span>
+                                    <span>Aggiungi un altro cliente in sequenza...</span>
                                 </button>
 
                                 <button
