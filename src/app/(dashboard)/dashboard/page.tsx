@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import {
     FileText, Download, Search, CheckCircle2, Building2, Loader2,
     UserPlus, X, Copy, Check, Archive, ArchiveRestore,
+    Folder, FolderOpen, ChevronRight, ChevronDown,
 } from 'lucide-react';
 
 const ARCHIVE_DAYS = 30;
@@ -18,10 +19,20 @@ interface DocumentRecord {
     fileName: string;
     summary: string;
     createdAt: string;
+    batchId: string | null;
+}
+
+interface FolderGroup {
+    key: string;
+    batchId: string | null;
+    clientName: string;
+    createdAt: string;
+    docs: DocumentRecord[];
 }
 
 interface RawDocumentItem {
     id: string;
+    batch_id?: string | null;
     document_type: string;
     extracted_client_name?: string;
     document_date?: string;
@@ -85,6 +96,18 @@ function formatDate(value: string): string {
     return new Date(value).toLocaleDateString('it-IT');
 }
 
+function formatDateTime(value: string): string {
+    return new Date(value).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' });
+}
+
+function pdfUrl(id: string): string {
+    return `/api/v1/documents/download?id=${encodeURIComponent(id)}`;
+}
+
+function folderUrl(batchId: string): string {
+    return `/api/v1/documents/folder?batch=${encodeURIComponent(batchId)}`;
+}
+
 export default function DashboardPage() {
     const [tab, setTab] = useState<Tab>('documents');
     const [searchTerm, setSearchTerm] = useState('');
@@ -99,6 +122,7 @@ export default function DashboardPage() {
     const [selected, setSelected] = useState<string[]>([]);
     const [busy, setBusy] = useState(false);
     const [copiedKey, setCopiedKey] = useState<string | null>(null);
+    const [openFolders, setOpenFolders] = useState<string[]>([]);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [clientName, setClientName] = useState('');
@@ -124,6 +148,7 @@ export default function DashboardPage() {
                     fileName: item.suggested_file_name,
                     summary: item.summary,
                     createdAt: item.created_at,
+                    batchId: item.batch_id || null,
                 }));
 
                 setDocuments(formattedDocs);
@@ -226,6 +251,10 @@ export default function DashboardPage() {
         }
     };
 
+    const toggleFolder = (key: string) => {
+        setOpenFolders((prev) => (prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key]));
+    };
+
     const toggleSelect = (id: string) => {
         setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
     };
@@ -245,6 +274,40 @@ export default function DashboardPage() {
             doc.fileName.toLowerCase().includes(term)
     );
 
+    // Regroupement par dossier : un dossier = un envoi du client (toutes ses photos)
+    const groups: FolderGroup[] = [];
+    const byBatch = new Map<string, FolderGroup>();
+    for (const doc of filteredDocuments) {
+        if (doc.batchId) {
+            let group = byBatch.get(doc.batchId);
+            if (!group) {
+                group = {
+                    key: doc.batchId,
+                    batchId: doc.batchId,
+                    clientName: doc.clientName,
+                    createdAt: doc.createdAt,
+                    docs: [],
+                };
+                byBatch.set(doc.batchId, group);
+                groups.push(group);
+            }
+            group.docs.push(doc);
+        } else {
+            groups.push({
+                key: doc.id,
+                batchId: null,
+                clientName: doc.clientName,
+                createdAt: doc.createdAt,
+                docs: [doc],
+            });
+        }
+    }
+    for (const group of byBatch.values()) {
+        // L'API renvoie du plus recent au plus ancien : on remet les photos dans l'ordre d'envoi
+        group.docs.reverse();
+        group.createdAt = group.docs[0].createdAt;
+    }
+
     const matchClient = (c: ClientRecord) =>
         c.name.toLowerCase().includes(term) || (c.email || '').toLowerCase().includes(term);
 
@@ -252,6 +315,37 @@ export default function DashboardPage() {
     const archivedClients = clients.filter((c) => c.archived_at && matchClient(c));
     const activeCount = clients.filter((c) => !c.archived_at).length;
     const archivedCount = clients.filter((c) => c.archived_at).length;
+
+    const renderDocRow = (doc: DocumentRecord, nested: boolean) => (
+        <tr key={doc.id} className="hover:bg-slate-50 transition-colors">
+            <td className={`py-3 font-semibold text-slate-900 ${nested ? 'pl-12 pr-4' : 'px-4'}`}>
+                {doc.clientName}
+            </td>
+            <td className="py-3 px-4">
+                <span className="bg-blue-100 text-blue-800 text-xs px-2.5 py-1 rounded-full font-medium">
+                    {doc.documentType}
+                </span>
+            </td>
+            <td className="py-3 px-4">
+                <div className="flex items-center space-x-1.5 text-blue-600 font-medium">
+                    <FileText className="w-4 h-4 text-slate-400 shrink-0" />
+                    <span className="truncate max-w-xs">{doc.fileName}</span>
+                </div>
+            </td>
+            <td className="py-3 px-4 text-slate-600">{doc.documentDate}</td>
+            <td className="py-3 px-4 text-slate-600 truncate max-w-xs">{doc.summary}</td>
+            <td className="py-3 px-4 text-right">
+                <a
+                    href={pdfUrl(doc.id)}
+                    download={doc.fileName}
+                    className="inline-flex items-center space-x-1 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 transition-colors"
+                >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>PDF</span>
+                </a>
+            </td>
+        </tr>
+    );
 
     const renderClientsTable = (list: ClientRecord[], mode: 'active' | 'archived') => {
         const allSelected = list.length > 0 && list.every((c) => selected.includes(c.id));
@@ -460,34 +554,50 @@ export default function DashboardPage() {
                                                 </div>
                                             </td>
                                         </tr>
-                                    ) : filteredDocuments.length > 0 ? (
-                                        filteredDocuments.map((doc) => (
-                                            <tr key={doc.id} className="hover:bg-slate-50 transition-colors">
-                                                <td className="py-3 px-4 font-semibold text-slate-900">
-                                                    {doc.clientName}
-                                                </td>
-                                                <td className="py-3 px-4">
-                                                    <span className="bg-blue-100 text-blue-800 text-xs px-2.5 py-1 rounded-full font-medium">
-                                                        {doc.documentType}
-                                                    </span>
-                                                </td>
-                                                <td className="py-3 px-4 text-blue-600 font-medium flex items-center space-x-1.5">
-                                                    <FileText className="w-4 h-4 text-slate-400 shrink-0" />
-                                                    <span className="truncate max-w-xs">{doc.fileName}</span>
-                                                </td>
-                                                <td className="py-3 px-4 text-slate-600">{doc.documentDate}</td>
-                                                <td className="py-3 px-4 text-slate-600 truncate max-w-xs">{doc.summary}</td>
-                                                <td className="py-3 px-4 text-right">
-                                                    <button
-                                                        onClick={() => alert(`Download del file : ${doc.fileName}`)}
-                                                        className="inline-flex items-center space-x-1 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 transition-colors"
+                                    ) : groups.length > 0 ? (
+                                        groups.map((group) => {
+                                            if (!group.batchId) {
+                                                return renderDocRow(group.docs[0], false);
+                                            }
+
+                                            const batchId = group.batchId;
+                                            const isOpen = openFolders.includes(group.key) || term !== '';
+
+                                            return (
+                                                <Fragment key={group.key}>
+                                                    <tr
+                                                        className="bg-slate-50 hover:bg-slate-100 cursor-pointer transition-colors"
+                                                        onClick={() => toggleFolder(group.key)}
                                                     >
-                                                        <Download className="w-3.5 h-3.5" />
-                                                        <span>PDF</span>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))
+                                                        <td colSpan={5} className="py-3 px-4">
+                                                            <div className="flex items-center space-x-2 font-semibold text-slate-900">
+                                                                {isOpen
+                                                                    ? <ChevronDown className="w-4 h-4 text-slate-500" />
+                                                                    : <ChevronRight className="w-4 h-4 text-slate-500" />}
+                                                                {isOpen
+                                                                    ? <FolderOpen className="w-5 h-5 text-amber-500" />
+                                                                    : <Folder className="w-5 h-5 text-amber-500" />}
+                                                                <span>{group.clientName}</span>
+                                                                <span className="text-xs font-normal text-slate-500">
+                                                                    {`- ${formatDateTime(group.createdAt)} - ${group.docs.length} ${group.docs.length === 1 ? 'documento' : 'documenti'}`}
+                                                                </span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-3 px-4 text-right">
+                                                            <a
+                                                                href={folderUrl(batchId)}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                className="inline-flex items-center space-x-1 bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                                                            >
+                                                                <Download className="w-3.5 h-3.5" />
+                                                                <span>Cartella ZIP</span>
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                    {isOpen && group.docs.map((doc) => renderDocRow(doc, true))}
+                                                </Fragment>
+                                            );
+                                        })
                                     ) : (
                                         <tr>
                                             <td colSpan={6} className="text-center py-12 text-slate-500">

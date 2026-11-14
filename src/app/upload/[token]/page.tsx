@@ -15,6 +15,13 @@ interface FilePreview {
     previewUrl: string;
 }
 
+// Identifiant du dossier : un par envoi (toutes les photos envoyees ensemble)
+// Pas de crypto.randomUUID ici : indisponible en HTTP simple (hors contexte securise)
+function makeBatchId(): string {
+    const rand = Math.random().toString(36).slice(2, 8);
+    return `${Date.now().toString(36)}-${rand}`;
+}
+
 function UploadContent() {
     const params = useParams();
     const token = params.token;
@@ -54,11 +61,13 @@ function UploadContent() {
 
         try {
             const processedResults: ProcessedResult[] = [];
+            const batchId = makeBatchId();
 
             for (const item of fileList) {
                 const formData = new FormData();
                 formData.append('file', item.file);
                 formData.append('token', token as string);
+                formData.append('batchId', batchId);
 
                 const res = await fetch('/api/v1/documents/process', {
                     method: 'POST',

@@ -7,6 +7,7 @@ export async function GET() {
             .from('documents')
             .select(`
         id,
+        batch_id,
         document_type,
         extracted_client_name,
         document_date,
