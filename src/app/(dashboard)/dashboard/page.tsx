@@ -108,6 +108,13 @@ function folderUrl(batchId: string): string {
     return `/api/v1/documents/folder?batch=${encodeURIComponent(batchId)}`;
 }
 
+// Meme logique de nom que l'API du ZIP : Cartella_<Cliente>_<data>.zip
+function zipNameFor(group: FolderGroup): string {
+    const safe = group.clientName.replace(/[^A-Za-z0-9._-]+/g, '_').replace(/^_+|_+$/g, '') || 'Cliente';
+    const stamp = new Date(group.createdAt).toISOString().slice(0, 10);
+    return `Cartella_${safe}_${stamp}.zip`;
+}
+
 export default function DashboardPage() {
     const [tab, setTab] = useState<Tab>('documents');
     const [searchTerm, setSearchTerm] = useState('');
@@ -123,6 +130,7 @@ export default function DashboardPage() {
     const [busy, setBusy] = useState(false);
     const [copiedKey, setCopiedKey] = useState<string | null>(null);
     const [openFolders, setOpenFolders] = useState<string[]>([]);
+    const [zipGroup, setZipGroup] = useState<FolderGroup | null>(null);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [clientName, setClientName] = useState('');
@@ -584,14 +592,17 @@ export default function DashboardPage() {
                                                             </div>
                                                         </td>
                                                         <td className="py-3 px-4 text-right">
-                                                            <a
-                                                                href={folderUrl(batchId)}
-                                                                onClick={(e) => e.stopPropagation()}
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setZipGroup(group);
+                                                                }}
                                                                 className="inline-flex items-center space-x-1 bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
                                                             >
                                                                 <Download className="w-3.5 h-3.5" />
                                                                 <span>Cartella ZIP</span>
-                                                            </a>
+                                                            </button>
                                                         </td>
                                                     </tr>
                                                     {isOpen && group.docs.map((doc) => renderDocRow(doc, true))}
@@ -715,6 +726,66 @@ export default function DashboardPage() {
                                 </button>
                             </div>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {zipGroup && zipGroup.batchId && (
+                <div
+                    className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+                    onClick={() => setZipGroup(null)}
+                >
+                    <div
+                        className="bg-white rounded-xl max-w-md w-full p-6 space-y-6 shadow-xl relative"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button
+                            onClick={() => setZipGroup(null)}
+                            className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+                            aria-label="Chiudi"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+
+                        <div>
+                            <h3 className="text-lg font-bold text-slate-900">Cartella ZIP</h3>
+                            <p className="text-xs text-slate-500 mt-1">
+                                Tutti i documenti di questo invio, in un unico file.
+                            </p>
+                        </div>
+
+                        <ul className="border border-slate-200 rounded-lg overflow-hidden text-sm max-h-72 overflow-y-auto">
+                            <li className="flex items-center space-x-2 px-3 py-2 bg-slate-50 font-semibold text-slate-900">
+                                <Folder className="w-4 h-4 text-amber-500 shrink-0" />
+                                <span className="truncate">{zipNameFor(zipGroup)}</span>
+                            </li>
+                            {zipGroup.docs.map((doc) => (
+                                <li
+                                    key={doc.id}
+                                    className="flex items-center space-x-2 pl-6 pr-3 py-2 border-t border-slate-200 text-slate-700"
+                                >
+                                    <FileText className="w-4 h-4 text-slate-400 shrink-0" />
+                                    <span className="truncate">{doc.fileName}</span>
+                                </li>
+                            ))}
+                        </ul>
+
+                        <div className="space-y-3">
+                            <a
+                                href={folderUrl(zipGroup.batchId)}
+                                onClick={() => setZipGroup(null)}
+                                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium shadow-sm transition-colors flex justify-center items-center space-x-2"
+                            >
+                                <Download className="w-4 h-4" />
+                                <span>Scarica la cartella</span>
+                            </a>
+                            <button
+                                onClick={() => setZipGroup(null)}
+                                className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors"
+                            >
+                                Chiudi
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
