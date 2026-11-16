@@ -3,8 +3,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 // Modele principal et modele de secours (modifiables dans .env.production sans toucher au code)
-const PRIMARY_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
-const FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL || 'gemini-1.5-pro';
+const PRIMARY_MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+const FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL || 'gemini-2.0-flash';
 
 const DOCUMENT_TYPES = [
     'Fattura',
