@@ -1,15 +1,20 @@
 'use client';
 
 import { useState, useEffect, Fragment } from 'react';
+import { useRouter } from 'next/navigation';
 import {
     FileText, Download, Search, CheckCircle2, Building2, Loader2,
     UserPlus, X, Copy, Check, Archive, ArchiveRestore,
-    Folder, FolderOpen, ChevronRight, ChevronDown,
+    Folder, FolderOpen, ChevronRight, ChevronDown, Settings, Info,
 } from 'lucide-react';
+import { getBrowserClient } from '@/lib/supabase-browser';
+import { authedFetch, downloadFile } from '@/lib/authed-fetch';
+import SettingsPanel from '@/components/SettingsPanel';
+import AboutPanel from '@/components/AboutPanel';
 
 const ARCHIVE_DAYS = 30;
 
-type Tab = 'documents' | 'clients' | 'archived';
+type Tab = 'documents' | 'clients' | 'archived' | 'settings' | 'info';
 
 interface DocumentRecord {
     id: string;
@@ -116,6 +121,10 @@ function zipNameFor(group: FolderGroup): string {
 }
 
 export default function DashboardPage() {
+    const router = useRouter();
+    const [authReady, setAuthReady] = useState(false);
+    const [userEmail, setUserEmail] = useState('');
+    const [studioName, setStudioName] = useState('');
     const [tab, setTab] = useState<Tab>('documents');
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -138,10 +147,35 @@ export default function DashboardPage() {
     const [submittingClient, setSubmittingClient] = useState(false);
     const [generatedLink, setGeneratedLink] = useState<string | null>(null);
 
+    // Verifica del login : senza sessione si va alla pagina di accesso
     useEffect(() => {
+        async function checkSession() {
+            try {
+                const supabase = await getBrowserClient();
+                const { data } = await supabase.auth.getSession();
+                if (!data.session) {
+                    router.replace('/login');
+                    return;
+                }
+                setUserEmail(data.session.user.email || '');
+                setStudioName(String(data.session.user.user_metadata?.studio_name || ''));
+                setAuthReady(true);
+            } catch (err: unknown) {
+                setError(err instanceof Error ? err.message : 'Errore di accesso');
+                setLoading(false);
+                setClientsLoading(false);
+            }
+        }
+
+        checkSession();
+    }, [router]);
+
+    useEffect(() => {
+        if (!authReady) return;
+
         async function fetchDocuments() {
             try {
-                const res = await fetch('/api/v1/documents/list');
+                const res = await authedFetch('/api/v1/documents/list');
                 const data = await res.json();
 
                 if (!res.ok) {
@@ -169,12 +203,14 @@ export default function DashboardPage() {
         }
 
         fetchDocuments();
-    }, []);
+    }, [authReady]);
 
     useEffect(() => {
+        if (!authReady) return;
+
         async function loadClients() {
             try {
-                const res = await fetch('/api/v1/clients/list');
+                const res = await authedFetch('/api/v1/clients/list');
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Errore di caricamento clienti');
                 setClients(data.clients || []);
@@ -186,7 +222,7 @@ export default function DashboardPage() {
         }
 
         loadClients();
-    }, [clientsReload]);
+    }, [clientsReload, authReady]);
 
     const fetchClients = () => setClientsReload((n) => n + 1);
 
@@ -202,7 +238,7 @@ export default function DashboardPage() {
 
         setSubmittingClient(true);
         try {
-            const res = await fetch('/api/v1/clients/create', {
+            const res = await authedFetch('/api/v1/clients/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: clientName, email: clientEmail }),
@@ -242,7 +278,7 @@ export default function DashboardPage() {
 
         setBusy(true);
         try {
-            const res = await fetch('/api/v1/clients/archive', {
+            const res = await authedFetch('/api/v1/clients/archive', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ids, archive }),
@@ -256,6 +292,14 @@ export default function DashboardPage() {
             alert(err instanceof Error ? err.message : 'Errore');
         } finally {
             setBusy(false);
+        }
+    };
+
+    const handleDownload = async (url: string, name: string) => {
+        try {
+            await downloadFile(url, name);
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Download non riuscito');
         }
     };
 
@@ -343,14 +387,14 @@ export default function DashboardPage() {
             <td className="py-3 px-4 text-slate-600">{doc.documentDate}</td>
             <td className="py-3 px-4 text-slate-600 truncate max-w-xs">{doc.summary}</td>
             <td className="py-3 px-4 text-right">
-                <a
-                    href={pdfUrl(doc.id)}
-                    download={doc.fileName}
+                <button
+                    type="button"
+                    onClick={() => handleDownload(pdfUrl(doc.id), doc.fileName)}
                     className="inline-flex items-center space-x-1 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 transition-colors"
                 >
                     <Download className="w-3.5 h-3.5" />
                     <span>PDF</span>
-                </a>
+                </button>
             </td>
         </tr>
     );
@@ -485,7 +529,7 @@ export default function DashboardPage() {
                     <div>
                         <div className="flex items-center space-x-2 text-blue-600 font-semibold text-sm">
                             <Building2 className="w-5 h-5" />
-                            <span>Studio Commerciale / Legale - Area Gestione</span>
+                            <span>{studioName || 'Studio Commerciale / Legale - Area Gestione'}</span>
                         </div>
                         <h1 className="text-2xl font-extrabold text-slate-900 mt-1">
                             Cruscotto dei documenti ricevuti
@@ -513,8 +557,22 @@ export default function DashboardPage() {
                     <button onClick={() => changeTab('archived')} className={tabClass('archived')}>
                         Archiviati ({archivedCount})
                     </button>
+                    <button onClick={() => changeTab('settings')} className={`${tabClass('settings')} inline-flex items-center space-x-2`}>
+                        <Settings className="w-4 h-4" />
+                        <span>Impostazioni</span>
+                    </button>
+                    <button onClick={() => changeTab('info')} className={`${tabClass('info')} inline-flex items-center space-x-2`}>
+                        <Info className="w-4 h-4" />
+                        <span>Info sullo strumento</span>
+                    </button>
                 </div>
 
+                {tab === 'settings' && (
+                    <SettingsPanel email={userEmail} studioName={studioName} onStudioNameSaved={setStudioName} />
+                )}
+                {tab === 'info' && <AboutPanel />}
+
+                {(tab === 'documents' || tab === 'clients' || tab === 'archived') && (
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center space-x-4">
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
@@ -531,6 +589,7 @@ export default function DashboardPage() {
                         />
                     </div>
                 </div>
+                )}
 
                 {error && (
                     <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-sm">
@@ -771,14 +830,17 @@ export default function DashboardPage() {
                         </ul>
 
                         <div className="space-y-3">
-                            <a
-                                href={folderUrl(zipGroup.batchId)}
-                                onClick={() => setZipGroup(null)}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    handleDownload(folderUrl(zipGroup.batchId as string), zipNameFor(zipGroup));
+                                    setZipGroup(null);
+                                }}
                                 className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium shadow-sm transition-colors flex justify-center items-center space-x-2"
                             >
                                 <Download className="w-4 h-4" />
                                 <span>Scarica la cartella</span>
-                            </a>
+                            </button>
                             <button
                                 onClick={() => setZipGroup(null)}
                                 className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors"
