@@ -2,9 +2,9 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
-// Modele principal et modele de secours (modifiables dans .env.production sans toucher au code)
-const PRIMARY_MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
-const FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL || 'gemini-3.5-flash-lite';
+// Utilisation des vrais modèles officiels Gemini
+const PRIMARY_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL || 'gemini-1.5-flash';
 
 const DOCUMENT_TYPES = [
     'Fattura',
@@ -27,15 +27,14 @@ export interface DocumentMetadata {
 
 const PROMPT = `
 Sei un assistente di uno studio commerciale italiano. Analizza la foto di questo documento contabile o fiscale.
-Rispondi SOLO con un oggetto JSON valido, senza testo prima o dopo, con questi campi:
+Rispondi esclusivamente con un oggetto JSON valido, senza blocchi di codice markdown, senza testo prima o dopo, esattamente con questa struttura:
 {
-  "documentType": uno tra: ${DOCUMENT_TYPES.map((t) => `"${t}"`).join(', ')},
-  "clientName": "nome dell'emittente (azienda o persona che ha emesso il documento); \\"Sconosciuto\\" se illeggibile",
-  "documentDate": "data del documento nel formato YYYY-MM-DD, oppure stringa vuota se non si legge",
-  "totalAmount": "importo totale con la virgola, es. 1512,80 (stringa vuota se assente)",
+  "documentType": "scegli uno esattamente tra: Fattura, Scontrino, Bolletta, F24, Estratto conto, Contratto, Carta d\\'identita, Altro",
+  "clientName": "nome dell'emittente (azienda o persona). Scrivi Sconosciuto se illeggibile",
+  "documentDate": "data nel formato YYYY-MM-DD o stringa vuota se assente",
+  "totalAmount": "importo totale con la virgola, es. 1512,80 o stringa vuota",
   "summary": "una sola frase breve in italiano che descrive il contenuto"
 }
-Non inventare dati: se un'informazione non e leggibile, lasciala vuota.
 `;
 
 function today(): string {
@@ -52,7 +51,6 @@ function fallbackMetadata(reason: string): DocumentMetadata {
     };
 }
 
-// Nom normalise : Tipo_YYYY-MM-DD_Emittente.pdf (ASCII, sans accents ni espaces)
 function buildFileName(type: string, date: string, sender: string): string {
     const clean = (value: string) =>
         value
@@ -77,20 +75,15 @@ function parseModelJson(text: string): Record<string, unknown> {
 }
 
 async function askModel(modelName: string, imageBuffer: Buffer, mimeType: string): Promise<Record<string, unknown>> {
-    const model = genAI.getGenerativeModel({
-        model: modelName,
-        generationConfig: {
-            responseMimeType: 'application/json',
-            temperature: 0.1,
-        },
-    });
+    const model = genAI.getGenerativeModel({ model: modelName });
 
     const result = await model.generateContent([
         PROMPT,
         { inlineData: { data: imageBuffer.toString('base64'), mimeType } },
     ]);
 
-    return parseModelJson(result.response.text());
+    const responseText = result.response.text();
+    return parseModelJson(responseText);
 }
 
 export async function classifyAndRenameDocument(
@@ -107,14 +100,14 @@ export async function classifyAndRenameDocument(
     for (const modelName of [PRIMARY_MODEL, FALLBACK_MODEL]) {
         try {
             raw = await askModel(modelName, imageBuffer, mimeType);
-            break;
+            if (raw) break;
         } catch (error) {
             console.error(`IA : echec avec le modele "${modelName}" :`, error);
         }
     }
 
     if (!raw) {
-        return fallbackMetadata('Analisi IA non riuscita');
+        return fallbackMetadata('Document non analyse automatiquement');
     }
 
     const str = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
