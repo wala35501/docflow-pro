@@ -2,9 +2,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
-// Modele principal et modele de secours (modifiables dans .env.production sans toucher au code)
 const PRIMARY_MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
-const FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL || 'gemini-3.5-flash-lite';
+const FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL || 'gemini-1.5-flash';
 
 const DOCUMENT_TYPES = [
     'Fattura',
@@ -30,7 +29,7 @@ Sei un assistente di uno studio commerciale italiano. Analizza la foto di questo
 Rispondi SOLO con un oggetto JSON valido, senza testo prima o dopo, con questi campi:
 {
   "documentType": uno tra: ${DOCUMENT_TYPES.map((t) => `"${t}"`).join(', ')},
-  "clientName": "nome dell'emittente (azienda o persona che ha emesso il documento); \\"Sconosciuto\\" se illeggibile",
+  "clientName": "nome dell emittente (azienda o persona che ha emesso il documento); Sconosciuto se illeggibile",
   "documentDate": "data del documento nel formato YYYY-MM-DD, oppure stringa vuota se non si legge",
   "totalAmount": "importo totale con la virgola, es. 1512,80 (stringa vuota se assente)",
   "summary": "una sola frase breve in italiano che descrive il contenuto"
@@ -52,7 +51,6 @@ function fallbackMetadata(reason: string): DocumentMetadata {
     };
 }
 
-// Nom normalise : Tipo_YYYY-MM-DD_Emittente.pdf (ASCII, sans accents ni espaces)
 function buildFileName(type: string, date: string, sender: string): string {
     const clean = (value: string) =>
         value
@@ -98,7 +96,7 @@ export async function classifyAndRenameDocument(
     mimeType: string = 'image/jpeg'
 ): Promise<DocumentMetadata> {
     if (!process.env.GEMINI_API_KEY) {
-        console.error('IA : GEMINI_API_KEY manquante dans le fichier .env.production');
+        console.error('ERREUR : GEMINI_API_KEY manquante dans .env.production');
         return fallbackMetadata('Analisi IA non disponibile (chiave mancante)');
     }
 
@@ -106,15 +104,21 @@ export async function classifyAndRenameDocument(
 
     for (const modelName of [PRIMARY_MODEL, FALLBACK_MODEL]) {
         try {
+            console.log(`Tentative d'analyse avec le modele : ${modelName}`);
             raw = await askModel(modelName, imageBuffer, mimeType);
-            break;
-        } catch (error) {
-            console.error(`IA : echec avec le modele "${modelName}" :`, error);
+            if (raw) {
+                console.log(`Succes avec le modele : ${modelName}`);
+                break;
+            }
+        } catch (error: unknown) {
+            const err = error as Error;
+            console.error(`ERREUR API DETAILLEE (${modelName}) :`, err?.message || error);
         }
     }
 
     if (!raw) {
-        return fallbackMetadata('Analisi IA non riuscita');
+        console.error('Echec total : aucun modele n a pu analyser le document.');
+        return fallbackMetadata('Document non analyse automatiquement');
     }
 
     const str = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
