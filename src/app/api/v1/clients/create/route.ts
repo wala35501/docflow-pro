@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { requireUser, unauthorized } from '@/lib/auth-server';
 import crypto from 'crypto';
 
 export async function POST(request: Request) {
     try {
+        const user = await requireUser(request);
+        if (!user) return unauthorized();
+
         const { name, email } = await request.json();
 
         if (!name) {
@@ -19,6 +23,7 @@ export async function POST(request: Request) {
                 name,
                 email: email || null,
                 upload_token: uploadToken,
+                owner_id: user.id,
             })
             .select()
             .single();

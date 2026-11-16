@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { requireUser, unauthorized } from '@/lib/auth-server';
 import { buildZip, type ZipEntry } from '@/core/zip-builder';
 
 function safeName(name: string, fallback: string): string {
@@ -9,6 +10,9 @@ function safeName(name: string, fallback: string): string {
 
 export async function GET(request: Request) {
     try {
+        const user = await requireUser(request);
+        if (!user) return unauthorized();
+
         const batch = new URL(request.url).searchParams.get('batch') || '';
 
         if (!/^[A-Za-z0-9_-]{6,64}$/.test(batch)) {
@@ -17,7 +21,8 @@ export async function GET(request: Request) {
 
         const { data: rows, error } = await supabaseAdmin
             .from('documents')
-            .select('client_id, suggested_file_name, storage_path, created_at')
+            .select('client_id, suggested_file_name, storage_path, created_at, clients!inner(owner_id)')
+            .eq('clients.owner_id', user.id)
             .eq('batch_id', batch)
             .order('created_at', { ascending: true });
 

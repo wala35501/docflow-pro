@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { requireUser, unauthorized } from '@/lib/auth-server';
 
 function safeName(name: string): string {
     const cleaned = name.replace(/[^A-Za-z0-9._-]+/g, '_').replace(/^_+|_+$/g, '') || 'documento';
@@ -8,6 +9,9 @@ function safeName(name: string): string {
 
 export async function GET(request: Request) {
     try {
+        const user = await requireUser(request);
+        if (!user) return unauthorized();
+
         const id = new URL(request.url).searchParams.get('id') || '';
 
         if (!/^[0-9a-fA-F-]{8,64}$/.test(id)) {
@@ -16,7 +20,8 @@ export async function GET(request: Request) {
 
         const { data: doc, error } = await supabaseAdmin
             .from('documents')
-            .select('storage_path, suggested_file_name')
+            .select('storage_path, suggested_file_name, clients!inner(owner_id)')
+            .eq('clients.owner_id', user.id)
             .eq('id', id)
             .single();
 

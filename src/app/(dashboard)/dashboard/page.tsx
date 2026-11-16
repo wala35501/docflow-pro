@@ -232,7 +232,7 @@ export default function DashboardPage() {
         setSearchTerm('');
     };
 
-    const handleCreateClient = async (e: React.FormEvent) => {
+    const handleCreateClient = async (e: React.SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!clientName) return;
 
@@ -627,7 +627,6 @@ export default function DashboardPage() {
                                                 return renderDocRow(group.docs[0], false);
                                             }
 
-                                            const batchId = group.batchId;
                                             const isOpen = openFolders.includes(group.key) || term !== '';
 
                                             return (

@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-
-
+import { requireUser, unauthorized } from '@/lib/auth-server';
 
 export async function POST(req: Request) {
     try {
+        const user = await requireUser(req);
+        if (!user) return unauthorized();
+
         const body = await req.json();
         const ids: unknown = body.ids;
         const archive: boolean = body.archive !== false;
@@ -17,6 +19,7 @@ export async function POST(req: Request) {
             const { error } = await supabaseAdmin
                 .from('clients')
                 .update({ archived_at: new Date().toISOString() })
+                .eq('owner_id', user.id)
                 .in('id', ids as string[])
                 .is('archived_at', null);
             if (error) throw error;
@@ -24,6 +27,7 @@ export async function POST(req: Request) {
             const { error } = await supabaseAdmin
                 .from('clients')
                 .update({ archived_at: null })
+                .eq('owner_id', user.id)
                 .in('id', ids as string[]);
             if (error) throw error;
         }

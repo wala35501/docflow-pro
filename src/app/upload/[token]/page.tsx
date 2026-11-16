@@ -99,7 +99,7 @@ function UploadContent() {
         <div className="max-w-lg w-full mx-auto space-y-8">
             <div className="text-center">
                 <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-                    DocFlow Pro
+                    Com<span className="text-blue-600">Pro</span>
                 </h1>
                 <p className="mt-2 text-sm text-slate-600">
                     Area di trasmissione sicura per il vostro studio professionale
