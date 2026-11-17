@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { requireUser, unauthorized } from '@/lib/auth-server';
+import { requireUser, unauthorized, errorMessage } from '@/lib/auth-server';
 
 function safeName(name: string): string {
     const cleaned = name.replace(/[^A-Za-z0-9._-]+/g, '_').replace(/^_+|_+$/g, '') || 'documento';
@@ -51,7 +51,7 @@ export async function GET(request: Request) {
             },
         });
     } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : 'Erreur lors du telechargement';
+        const message = errorMessage(error, 'Erreur lors du telechargement');
         return NextResponse.json({ error: message }, { status: 500 });
     }
 }

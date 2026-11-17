@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Loader2, Mail, Lock, CheckCircle2 } from 'lucide-react';
 import { getBrowserClient } from '@/lib/supabase-browser';
 
@@ -113,7 +114,7 @@ export default function LoginPage() {
             <div className="max-w-md w-full mx-auto space-y-8">
                 <div className="text-center">
                     <h1 className="text-3xl font-extrabold tracking-tight">
-                        Com<span className="text-blue-600">Pro</span>
+                        DocFlow<span className="text-blue-600">Studio</span>
                     </h1>
                     <p className="mt-2 text-sm text-slate-600">
                         Area di gestione per il vostro studio professionale
@@ -255,9 +256,14 @@ export default function LoginPage() {
                     </div>
                 </div>
 
-                <p className="text-center text-xs text-slate-500">
-                    {"I tuoi clienti non hanno bisogno di un account: usano solo il loro link personale."}
-                </p>
+                <div className="text-center text-xs text-slate-500 space-y-2">
+                    <p>{"I tuoi clienti non hanno bisogno di un account: usano solo il loro link personale."}</p>
+                    <p>
+                        <Link href="/info" className="text-blue-600 font-semibold hover:underline">
+                            Scopri a cosa serve DocFlowStudio e come funziona
+                        </Link>
+                    </p>
+                </div>
             </div>
         </main>
     );

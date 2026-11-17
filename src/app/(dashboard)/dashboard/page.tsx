@@ -368,6 +368,39 @@ export default function DashboardPage() {
     const activeCount = clients.filter((c) => !c.archived_at).length;
     const archivedCount = clients.filter((c) => c.archived_at).length;
 
+    // Nuovo account senza clienti ne documenti : invito ad aggiungere il primo cliente (nessun errore)
+    const isEmptyAccount = !loading && !clientsLoading && !error && clients.length === 0 && documents.length === 0;
+
+    const renderWelcome = () => (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-center space-y-5">
+            <div className="w-14 h-14 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center mx-auto">
+                <UserPlus className="w-7 h-7" />
+            </div>
+            <div className="space-y-2">
+                <h2 className="text-xl font-extrabold text-slate-900">Benvenuto in DocFlowStudio!</h2>
+                <p className="text-sm text-slate-600 max-w-xl mx-auto leading-relaxed">
+                    {"Non hai ancora nessun cliente. Aggiungi il tuo primo cliente per ottenere il suo link personale: potr\u00e0 inviarti le foto dei documenti dal telefono, senza creare un account."}
+                </p>
+            </div>
+            <div className="flex flex-col sm:flex-row justify-center gap-3">
+                <button
+                    onClick={() => { setIsModalOpen(true); setGeneratedLink(null); setClientName(''); setClientEmail(''); }}
+                    className="inline-flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-colors"
+                >
+                    <UserPlus className="w-4 h-4" />
+                    <span>Aggiungi il tuo primo cliente</span>
+                </button>
+                <button
+                    onClick={() => changeTab('info')}
+                    className="inline-flex items-center justify-center space-x-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors"
+                >
+                    <Info className="w-4 h-4" />
+                    <span>Come funziona</span>
+                </button>
+            </div>
+        </div>
+    );
+
     const renderDocRow = (doc: DocumentRecord, nested: boolean) => (
         <tr key={doc.id} className="hover:bg-slate-50 transition-colors">
             <td className={`py-3 font-semibold text-slate-900 ${nested ? 'pl-12 pr-4' : 'px-4'}`}>
@@ -572,7 +605,7 @@ export default function DashboardPage() {
                 )}
                 {tab === 'info' && <AboutPanel />}
 
-                {(tab === 'documents' || tab === 'clients' || tab === 'archived') && (
+                {(tab === 'documents' || tab === 'clients' || tab === 'archived') && !isEmptyAccount && (
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center space-x-4">
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
@@ -597,7 +630,9 @@ export default function DashboardPage() {
                     </div>
                 )}
 
-                {tab === 'documents' && (
+                {(tab === 'documents' || tab === 'clients') && isEmptyAccount && renderWelcome()}
+
+                {tab === 'documents' && !isEmptyAccount && (
                     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse text-sm">
@@ -680,7 +715,7 @@ export default function DashboardPage() {
                     </div>
                 )}
 
-                {tab === 'clients' && renderClientsTable(activeClients, 'active')}
+                {tab === 'clients' && !isEmptyAccount && renderClientsTable(activeClients, 'active')}
                 {tab === 'archived' && renderClientsTable(archivedClients, 'archived')}
 
             </div>

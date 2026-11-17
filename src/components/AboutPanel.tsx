@@ -28,10 +28,10 @@ export default function AboutPanel() {
         <div className="space-y-6">
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-3">
                 <h2 className="text-lg font-bold text-slate-900">
-                    A cosa serve ComPro
+                    A cosa serve DocFlowStudio
                 </h2>
                 <p className="text-sm text-slate-600 leading-relaxed">
-                    {"ComPro \u00e8 pensato per gli studi commerciali e legali: elimina la rincorsa ai documenti dei clienti. Il cliente invia le foto, lo studio le riceve gi\u00e0 pulite, classificate e rinominate, pronte da archiviare."}
+                    {"DocFlowStudio \u00e8 pensato per gli studi commerciali e legali: elimina la rincorsa ai documenti dei clienti. Il cliente invia le foto, lo studio le riceve gi\u00e0 pulite, classificate e rinominate, pronte da archiviare."}
                 </p>
             </div>
 
@@ -59,7 +59,7 @@ export default function AboutPanel() {
                 <div>
                     <h3 className="text-sm font-bold text-slate-900">Ogni studio vede solo i propri dati</h3>
                     <p className="text-sm text-slate-600 mt-1 leading-relaxed">
-                        {"Ogni studio ha il proprio account e il proprio cruscotto: clienti e documenti non sono visibili agli altri studi. ComPro \u00e8 una versione di prova (nome provvisorio): le funzioni possono cambiare."}
+                        {"Ogni studio ha il proprio account e il proprio cruscotto: clienti e documenti non sono visibili agli altri studi. DocFlowStudio \u00e8 una versione di prova (nome provvisorio): le funzioni possono cambiare."}
                     </p>
                 </div>
             </div>

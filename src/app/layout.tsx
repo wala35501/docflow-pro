@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ComPro",
+  title: "DocFlowStudio",
   description: "Ricezione e organizzazione dei documenti dei clienti per studi professionali",
 };
 

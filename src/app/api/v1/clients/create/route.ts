@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { requireUser, unauthorized } from '@/lib/auth-server';
+import { requireUser, unauthorized, errorMessage } from '@/lib/auth-server';
 import crypto from 'crypto';
 
 export async function POST(request: Request) {
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
 
         return NextResponse.json({ success: true, client: data }, { status: 201 });
     } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : 'Erreur lors de la creation du client';
+        const message = errorMessage(error, 'Erreur lors de la creation du client');
         return NextResponse.json({ error: message }, { status: 500 });
     }
 }

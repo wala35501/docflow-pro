@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { requireUser, unauthorized } from '@/lib/auth-server';
+import { requireUser, unauthorized, errorMessage } from '@/lib/auth-server';
 import { buildZip, type ZipEntry } from '@/core/zip-builder';
 
 function safeName(name: string, fallback: string): string {
@@ -95,7 +95,7 @@ export async function GET(request: Request) {
             },
         });
     } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : 'Erreur lors de la creation du dossier';
+        const message = errorMessage(error, 'Erreur lors de la creation du dossier');
         return NextResponse.json({ error: message }, { status: 500 });
     }
 }

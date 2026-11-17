@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { requireUser, unauthorized } from '@/lib/auth-server';
+import { requireUser, unauthorized, errorMessage } from '@/lib/auth-server';
 
 export async function GET(request: Request) {
     try {
@@ -34,7 +34,7 @@ export async function GET(request: Request) {
 
         return NextResponse.json({ success: true, documents: data }, { status: 200 });
     } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : 'Erreur lors de la recuperation des documents';
+        const message = errorMessage(error, 'Erreur lors de la recuperation des documents');
         return NextResponse.json({ error: message }, { status: 500 });
     }
 }

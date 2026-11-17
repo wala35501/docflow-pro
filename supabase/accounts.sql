@@ -1,4 +1,4 @@
--- ComPro : un account per studio. A eseguire UNA volta nello SQL Editor di Supabase.
+-- DocFlowStudio : un account per studio. A eseguire UNA volta nello SQL Editor di Supabase.
 
 -- 1. Ogni cliente appartiene a uno studio (utente Supabase)
 alter table clients add column if not exists owner_id uuid references auth.users(id) on delete cascade;
