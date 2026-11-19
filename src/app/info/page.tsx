@@ -24,6 +24,10 @@ export default function InfoPage() {
                         Accedi o crea un account
                     </Link>
                 </div>
+
+                <p className="text-center text-xs text-slate-500">
+                    <Link href="/privacy" className="hover:underline">Informativa privacy</Link>
+                </p>
             </div>
         </main>
     );
